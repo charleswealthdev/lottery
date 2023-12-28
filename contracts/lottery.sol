@@ -2,41 +2,22 @@
 pragma solidity ^0.8.19;
 
 contract Lottery {
-    address public manager = msg.sender;
+    address public manager;
     address[] public players;
     address[] public winners;
-    bool public countdownStatus;
-    mapping(address => uint) public winnerCounts;
-    uint public prize;
+
+
+    mapping(address => Player) public Tplayer;
     address public winner;
+    uint public prize;
+    uint public constant amount = 0.05 ether;
+    uint public TVolume;
+    uint public TX;
 
-    event WinnerPicked(address winner, uint256 index, uint256 prize);
-    event Status(string status);
-
-    function getManager() public view returns (address) {
-        return manager;
-    }
-
-    function joinGame() external payable {
-        require(msg.value == 0.05 ether, "Incorrect ether value sent");
-        require(players.length < 10, "Maximum number of players reached");
-        for (uint256 i = 0; i < players.length; i++) {
-            require(players[i] != msg.sender, "You are already a participant in the game.");
-        }
-        players.push(payable(msg.sender));
-    }
-
-    function viewPlayers() public view returns (address[] memory) {
-        return players;
-    }
-
-
-    function random() internal view returns (uint) {
-        return uint(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, players)));
-    }
-
-    function getBalance() public view returns (uint) {
-        return address(this).balance;
+    struct Player {
+        uint timeplayed;
+        uint wins;
+        uint losses;
     }
 
     modifier onlyManager() {
@@ -44,50 +25,106 @@ contract Lottery {
         _;
     }
 
+    modifier onlyWinner(){
+        require(msg.sender == winner,"only winner can claim");
+        _;
+    }
+   
+    event WinnerPicked(address winner, uint256 prize);
+
+    constructor() {
+        manager = msg.sender;
+    }
 
 
-function pickWinner() public returns (address) {
-    require(players.length >= 3, "This lottery needs more than 3 players");
-    uint index = random() % players.length;
-    winner = players[index];
-    winnerCounts[winner]++;
-    prize = address(this).balance;
+function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
 
-    // Instead of transferring funds immediately, keep them in the contract
-    // until the winner explicitly claims the prize using the transferPrize function.
-    
-    emit WinnerPicked(winner, index, prize);
-    
-    return winner;
-}
+    // function getTV() public view returns(uint){
+    //     return TVolume;
+    // }
 
-function transferPrize() public {
-    require(msg.sender == winner, "Only the winner can claim the prize");
-    
-    // Ensure that the winner is set before attempting to transfer the prize
-    require(winner != address(0), "Winner address not set");
+    // function TXtimes() public view returns(uint){
+    //     return TX;
+    // }
+//     function timesPlayed() public view returns(uint){
+//         return Tplayer[msg.sender].timeplayed;
+//     }
+//   function timesWon() public view returns(uint){
+//         return Tplayer[msg.sender].wins;
+//     }
 
-    // Check if there is a prize to transfer
-    require(prize > 0, "No prize available to transfer");
+     function getPlayerStats(address player) public view returns (uint wins, uint losses, uint timePlayed) {
+        Player storage playerInfo = Tplayer[player];
+        return (playerInfo.wins, playerInfo.losses, playerInfo.timeplayed);
+    }
 
-    // Transfer the prize to the winner
-    payable(winner).transfer(prize);
+// function timesLost() public view returns(uint){
+//         return Tplayer[msg.sender].losses;
+//     }
 
-    // Record the winner and reset for the next round
-    winners.push(winner);
-    startAgain();
-}
+    function joinGame() external payable  {
+        require(msg.value == amount, "Incorrect ether value sent");
+        require(players.length < 100, "Maximum number of players reached");
+  for (uint256 i = 0; i < players.length; i++) {
+            require(players[i] != msg.sender, "You are already a participant in the game.");
+        }
+        players.push(msg.sender);
+         TVolume += msg.value;
+        TX++;
+        Player storage newPlayer = Tplayer[msg.sender];
+        newPlayer.timeplayed++;
+    }
 
+    function pickWinner() public onlyManager {
+        require(players.length >= 3, "This lottery needs more than 3 players");
+
+        uint index = random() % players.length;
+         winner = players[index];
+
+        Tplayer[winner].wins++;
+        TX++;
+
+        for (uint i = 0; i < players.length; i++) {
+            if (i != index) {
+                Tplayer[players[i]].losses++;
+            }
+        }
+
+        prize = address(this).balance;
+        winners.push(winner);
+        emit WinnerPicked(winner, prize);
+
+        // Reset the game
+        resetGame();
+    }
+
+    function transferPrize() public onlyWinner {
+        require(prize > 0, "No prize to transfer");
+         TVolume+=prize;
+        payable(winners[winners.length - 1]).transfer(prize);
+       
+        TX++;
+        prize = 0; // Reset prize after transfer
+        
+    }
+function viewPlayers() public view returns (address[] memory) {
+        return players;
+    }
+    function random() private view returns (uint) {
+        return uint(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp, players)));
+    }
+
+    function resetGame() private {
+        delete players;
+    }
 
     function getWinCount(address player) public view returns (uint) {
-        return winnerCounts[player];
+        return Tplayer[player].wins;
     }
 
     function viewPastWinners() public view returns (address[] memory) {
         return winners;
-    }
-
-    function startAgain() private {
-        players = new address[](0);
     }
 }
