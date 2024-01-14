@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "client",
   "version": "0.1.0",
   "private": true,
@@ -42,5 +43,17 @@
   },
   "devDependencies": {
     "tailwindcss": "^3.4.0"
+=======
+  "dependencies": {
+    "@maticnetwork/meta": "^2.4.59",
+    "@quicknode/sdk": "^2.0.0",
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "dotenv": "^16.3.1",
+    "eth-block-tracker": "^8.1.0",
+    "web3": "^4.3.0"
+  },
+  "devDependencies": {
+    "truffle-plugin-verify": "^0.5.4"
+>>>>>>> b60b4fb5bf1c61a9a95a90297ace57e0c0065823
   }
 }
