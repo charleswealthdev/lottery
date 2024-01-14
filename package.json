@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@maticnetwork/meta": "^2.4.59",
+    "@quicknode/sdk": "^2.0.0",
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "dotenv": "^16.3.1",
+    "eth-block-tracker": "^8.1.0",
+    "web3": "^4.3.0"
+  },
+  "devDependencies": {
+    "truffle-plugin-verify": "^0.5.4"
+  }
+}
